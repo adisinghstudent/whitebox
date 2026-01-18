@@ -1,26 +1,118 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Background Layers */
+  --bg-primary: #000000;
+  --bg-secondary: #0A0A0A;
+  --bg-tertiary: #111111;
+  --bg-elevated: #1A1A1A;
+
+  /* Primary Accent - Lime Green (Anduril signature) */
+  --accent-primary: #DFF140;
+  --accent-primary-dim: #B8C933;
+  --accent-primary-glow: rgba(223, 241, 64, 0.15);
+
+  /* Status Colors */
+  --status-success: #22C55E;
+  --status-warning: #F59E0B;
+  --status-error: #FF3535;
+  --status-info: #3B82F6;
+
+  /* Text Hierarchy */
+  --text-primary: #FFFFFF;
+  --text-secondary: #A1A1AA;
+  --text-tertiary: #52525B;
+  --text-inverse: #000000;
+
+  /* Borders & Lines */
+  --border-subtle: #27272A;
+  --border-default: #3F3F46;
+  --border-focus: #DFF140;
+
+  /* CSS Variables for Tailwind */
+  --background: #000000;
+  --foreground: #FFFFFF;
+  --card: #111111;
+  --card-elevated: #1A1A1A;
+  --muted: #A1A1AA;
+  --muted-foreground: #52525B;
+  --accent: #DFF140;
+  --accent-dim: #B8C933;
+  --accent-glow: rgba(223, 241, 64, 0.15);
+  --border: #27272A;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --error: #FF3535;
+  --info: #3B82F6;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-card: var(--card);
+  --color-card-elevated: var(--card-elevated);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-accent-glow: var(--accent-glow);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), 'JetBrains Mono', 'SF Mono', monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* Tactical Grid Background */
+.tactical-grid {
+  background-image:
+    linear-gradient(rgba(223, 241, 64, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(223, 241, 64, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Animations */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px var(--accent-glow); }
+  50% { box-shadow: 0 0 20px var(--accent-glow); }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary-dim);
 }
