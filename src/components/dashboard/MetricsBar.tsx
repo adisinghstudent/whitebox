@@ -12,11 +12,11 @@ interface MetricCardProps {
 
 function MetricCard({ label, value, subtext, progress, trend }: MetricCardProps) {
   return (
-    <div className="bg-black/30 border border-border rounded-lg p-4 min-w-[140px]">
+    <div className="bg-card p-5 min-w-[140px]">
       <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
         {label}
       </div>
-      <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
+      <div className="text-2xl font-normal tracking-tight text-foreground">
         {typeof value === "number" ? value.toLocaleString() : value}
       </div>
       {subtext && (
@@ -35,7 +35,7 @@ function MetricCard({ label, value, subtext, progress, trend }: MetricCardProps)
         <div className="mt-2">
           <div className="h-1 bg-card-elevated rounded-full overflow-hidden">
             <div
-              className="h-full bg-accent rounded-full transition-all duration-500"
+              className="h-full bg-accent-teal rounded-full transition-all duration-500"
               style={{ width: `${Math.min(100, progress)}%` }}
             />
           </div>

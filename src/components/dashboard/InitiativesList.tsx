@@ -18,9 +18,9 @@ function InitiativeCard({ initiative }: InitiativeCardProps) {
     <Link
       href={`/initiatives/${initiative.id}`}
       className={cn(
-        "block bg-card p-4 rounded border border-border transition-all duration-150",
-        "hover:bg-card-elevated hover:border-accent/30",
-        initiative.status === "active" && "border-l-[3px] border-l-accent"
+        "block bg-card-elevated p-4 transition-all duration-150",
+        "hover:bg-border",
+        initiative.status === "active" && "border-l-2 border-l-foreground"
       )}
     >
       {/* Header */}
@@ -48,7 +48,7 @@ function InitiativeCard({ initiative }: InitiativeCardProps) {
           <div
             className={cn(
               "h-full rounded-full transition-all duration-500",
-              isScaling ? "bg-warning" : "bg-accent"
+              isScaling ? "bg-warning" : "bg-accent-teal"
             )}
             style={{ width: `${progressPercent}%` }}
           />
@@ -76,7 +76,7 @@ export function InitiativesList({ initiatives }: InitiativesListProps) {
   const activeCount = initiatives.filter((i) => i.status === "active").length;
 
   return (
-    <div className="bg-black/30 border border-border rounded-lg p-4">
+    <div className="bg-card p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-medium text-foreground">Active Initiatives</h2>
         <span className="text-sm text-muted font-mono">
@@ -90,7 +90,7 @@ export function InitiativesList({ initiatives }: InitiativesListProps) {
             <p className="text-muted mb-3">No initiatives yet</p>
             <Link
               href="/initiatives/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-black font-medium rounded hover:bg-accent-dim transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-foreground text-white font-normal hover:opacity-85 transition-opacity"
             >
               <span>+</span>
               <span>Create Initiative</span>

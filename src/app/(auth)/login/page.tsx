@@ -1,220 +1,88 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { Suspense } from "react";
 
 function LoginContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/dashboard";
+  const urlError = searchParams.get("error");
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(urlError);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/callback?redirectTo=${redirectTo}`,
-          },
-        });
-
-        if (error) throw error;
-        setMessage("Check your email to confirm your account");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-        router.push(redirectTo);
-        router.refresh();
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleMagicLink = async () => {
-    if (!email) {
-      setError("Please enter your email");
-      return;
-    }
-
+  const handleGitHubLogin = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "github",
         options: {
-          emailRedirectTo: `${window.location.origin}/callback?redirectTo=${redirectTo}`,
+          redirectTo: `${window.location.origin}/callback?redirectTo=${redirectTo}`,
+          scopes: "repo read:user user:email",
         },
       });
 
       if (error) throw error;
-      setMessage("Check your email for the login link");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background tactical-grid flex items-center justify-center">
+    <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="w-full max-w-md p-8">
-        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-3 h-3 rounded-full bg-accent animate-pulse" />
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              AGENT COMMAND
-            </h1>
-          </div>
-          <p className="text-muted">AI Agent Orchestration Platform</p>
+          <h1 className="text-sm font-normal text-foreground tracking-widest uppercase mb-2">
+            Agent Command
+          </h1>
+          <p className="text-muted text-base">AI Agent Orchestration Platform</p>
         </div>
 
-        {/* Login Card */}
-        <div className="bg-card border border-border rounded-lg p-6">
-          <h2 className="text-lg font-medium text-foreground mb-6 text-center">
-            {isSignUp ? "Create your account" : "Sign in to continue"}
+        <div className="bg-card p-8">
+          <h2 className="text-xl font-normal text-foreground mb-6 text-center">
+            Sign in
           </h2>
 
           {error && (
-            <div className="mb-4 p-3 bg-error/10 border border-error/20 rounded text-sm text-error">
+            <div className="mb-4 p-3 bg-error/10 border border-error/20 text-sm text-error">
               {error}
             </div>
           )}
 
-          {message && (
-            <div className="mb-4 p-3 bg-success/10 border border-success/20 rounded text-sm text-success">
-              {message}
-            </div>
-          )}
-
-          <form onSubmit={handleEmailAuth} className="space-y-4">
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-muted mb-1"
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent font-mono text-sm"
-                placeholder="you@company.com"
-                required
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-muted mb-1"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent font-mono text-sm"
-                placeholder="••••••••"
-                required
-                minLength={6}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 bg-accent text-black font-semibold rounded-lg hover:bg-accent-dim transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading
-                ? "Loading..."
-                : isSignUp
-                ? "Create Account"
-                : "Sign In"}
-            </button>
-          </form>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or</span>
-            </div>
-          </div>
-
           <button
-            onClick={handleMagicLink}
+            onClick={handleGitHubLogin}
             disabled={isLoading}
-            className="w-full py-3 bg-card-elevated border border-border text-foreground font-medium rounded-lg hover:border-accent/50 transition-all duration-150 disabled:opacity-50"
+            className="w-full py-3 bg-foreground text-white font-normal hover:opacity-85 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
-            Send Magic Link
+            <svg
+              className="w-5 h-5"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+              />
+            </svg>
+            {isLoading ? "Connecting..." : "Continue with GitHub"}
           </button>
 
-          <p className="text-center mt-6 text-sm text-muted-foreground">
-            {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-            <button
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError(null);
-                setMessage(null);
-              }}
-              className="text-accent hover:underline"
-            >
-              {isSignUp ? "Sign in" : "Sign up"}
-            </button>
+          <p className="text-xs text-muted-foreground text-center mt-6">
+            We&apos;ll request access to your repositories so agents can work on your code.
           </p>
         </div>
 
-        {/* Features */}
-        <div className="mt-8 grid grid-cols-3 gap-4 text-center">
-          <div>
-            <div className="text-2xl font-bold font-mono text-accent">5+</div>
-            <div className="text-xs text-muted-foreground">AI Agents</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold font-mono text-accent">24/7</div>
-            <div className="text-xs text-muted-foreground">Automation</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold font-mono text-accent">∞</div>
-            <div className="text-xs text-muted-foreground">Scalability</div>
-          </div>
-        </div>
-
-        {/* Footer */}
         <p className="text-xs text-muted-foreground text-center mt-8">
           By signing in, you agree to our Terms of Service and Privacy Policy
         </p>
@@ -228,7 +96,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="w-3 h-3 rounded-full bg-accent animate-pulse" />
+          <div className="text-muted">Loading...</div>
         </div>
       }
     >

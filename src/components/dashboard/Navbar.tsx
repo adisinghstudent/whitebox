@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { createBrowserClient } from "@supabase/ssr";
 
 interface NavbarProps {
   user: {
@@ -9,61 +10,56 @@ interface NavbarProps {
     name?: string | null;
     email?: string | null;
     image?: string | null;
+    githubConnected?: boolean;
   };
 }
 
 export function Navbar({ user }: NavbarProps) {
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
+
   return (
-    <nav className="border-b border-border bg-black/50 backdrop-blur-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4">
+    <nav className="border-b border-border bg-accent sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-            <span className="font-semibold text-foreground tracking-tight">
-              AGENT COMMAND
+          <Link href="/dashboard" className="flex items-center">
+            <span className="text-sm font-normal text-white tracking-widest uppercase">
+              Agent Command
             </span>
           </Link>
 
           {/* Navigation */}
           <div className="flex items-center gap-6">
             <Link
-              href="/"
-              className="text-sm text-muted hover:text-foreground transition-colors"
+              href="/dashboard"
+              className="text-sm text-white/70 hover:text-white transition-colors"
             >
               Dashboard
             </Link>
             <Link
-              href="/initiatives"
-              className="text-sm text-muted hover:text-foreground transition-colors"
+              href="/dashboard/tasks/new"
+              className="text-sm text-white bg-white/10 px-3 py-1 hover:bg-white/20 transition-colors"
             >
-              Initiatives
-            </Link>
-            <Link
-              href="/tasks"
-              className="text-sm text-muted hover:text-foreground transition-colors"
-            >
-              Tasks
-            </Link>
-            <Link
-              href="/repos"
-              className="text-sm text-muted hover:text-foreground transition-colors"
-            >
-              Repos
-            </Link>
-            <Link
-              href="/billing"
-              className="text-sm text-muted hover:text-foreground transition-colors"
-            >
-              Billing
+              + New Task
             </Link>
           </div>
 
           {/* User Menu */}
           <div className="flex items-center gap-4">
             <Link
-              href="/settings"
-              className="text-muted hover:text-foreground transition-colors"
+              href="/dashboard/settings"
+              className="text-white/70 hover:text-white transition-colors"
             >
               <svg
                 className="w-5 h-5"
@@ -87,22 +83,12 @@ export function Navbar({ user }: NavbarProps) {
             </Link>
 
             <div className="flex items-center gap-3">
-              {user.image ? (
-                <img
-                  src={user.image}
-                  alt={user.name || "User"}
-                  className="w-8 h-8 rounded-full border border-border"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-card-elevated border border-border flex items-center justify-center">
-                  <span className="text-xs font-medium text-muted">
-                    {user.name?.charAt(0) || user.email?.charAt(0) || "?"}
-                  </span>
-                </div>
-              )}
+              <span className="text-sm text-white/70">
+                {user.name || user.email?.split("@")[0] || "User"}
+              </span>
               <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="text-xs text-muted hover:text-foreground transition-colors"
+                onClick={handleSignOut}
+                className="text-xs text-white/50 hover:text-white transition-colors"
               >
                 Sign out
               </button>

@@ -154,7 +154,7 @@ export default function SettingsPage() {
       </p>
 
       {/* GitHub Integration */}
-      <div className="bg-card border border-border rounded-lg p-6">
+      <div className="bg-card p-8">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 bg-card-elevated rounded-lg flex items-center justify-center">
             <Github className="w-5 h-5 text-foreground" />
@@ -247,12 +247,12 @@ export default function SettingsPage() {
                   value={githubToken}
                   onChange={(e) => setGithubToken(e.target.value)}
                   placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                  className="flex-1 px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent font-mono text-sm"
+                  className="flex-1 px-3 py-2.5 bg-card border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-foreground font-mono text-sm"
                 />
                 <button
                   onClick={verifyAndSaveToken}
                   disabled={isVerifying || isSaving || !githubToken}
-                  className="px-4 py-2 bg-accent text-black font-medium rounded-lg hover:bg-accent-dim transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-5 py-2.5 bg-foreground text-white font-normal hover:opacity-85 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isVerifying ? (
                     <>
@@ -279,7 +279,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Account Section */}
-      <div className="mt-6 bg-card border border-border rounded-lg p-6">
+      <div className="mt-6 bg-card p-8">
         <h2 className="text-lg font-medium text-foreground mb-4">Account</h2>
         <div className="space-y-3">
           <button

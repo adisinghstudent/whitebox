@@ -22,8 +22,8 @@ function MessageCard({ message }: MessageCardProps) {
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <span className="font-mono text-sm text-foreground">
-            {message.fromInitiative?.substring(0, 2).toUpperCase() || "SYS"} →{" "}
-            {message.toInitiative?.substring(0, 2).toUpperCase() || "ALL"}
+            {message.fromInitiativeId?.substring(0, 2).toUpperCase() || "SYS"} →{" "}
+            {message.toInitiativeId?.substring(0, 2).toUpperCase() || "ALL"}
           </span>
           <span
             className={cn(
@@ -35,7 +35,7 @@ function MessageCard({ message }: MessageCardProps) {
           </span>
         </div>
         <span className="text-xs text-muted-foreground font-mono">
-          {new Date(message.timestamp).toLocaleTimeString()}
+          {message.createdAt.toLocaleTimeString()}
         </span>
       </div>
 

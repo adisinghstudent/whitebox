@@ -33,7 +33,7 @@ function TaskCard({ task }: TaskCardProps) {
   return (
     <Link
       href={`/tasks/${task.id}`}
-      className="block bg-card p-4 rounded border border-border hover:bg-card-elevated hover:border-accent/30 transition-all duration-150"
+      className="block bg-card-elevated p-4 hover:bg-border transition-all duration-150"
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-2">
@@ -82,7 +82,7 @@ function TaskCard({ task }: TaskCardProps) {
         <div className="mt-3">
           <div className="h-1 bg-card-elevated rounded-full overflow-hidden">
             <div
-              className="h-full bg-accent rounded-full transition-all duration-500"
+              className="h-full bg-accent-teal rounded-full transition-all duration-500"
               style={{ width: `${task.progress}%` }}
             />
           </div>
@@ -117,7 +117,7 @@ export function TaskPipeline({ tasks }: TaskPipelineProps) {
   });
 
   return (
-    <div className="bg-black/30 border border-border rounded-lg p-4">
+    <div className="bg-card p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-medium text-foreground">Task Pipeline</h2>
         <span className="text-sm text-muted font-mono">
@@ -131,7 +131,7 @@ export function TaskPipeline({ tasks }: TaskPipelineProps) {
             <p className="text-muted mb-3">No tasks in pipeline</p>
             <Link
               href="/tasks/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-black font-medium rounded hover:bg-accent-dim transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-foreground text-white font-normal hover:opacity-85 transition-opacity"
             >
               <span>+</span>
               <span>Create Task</span>

@@ -79,23 +79,25 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      initiativeId,
-      repositoryId,
+      // Direct task creation (simple mode)
+      repoUrl,
+      branch = "main",
       prompt,
       type = "custom",
+      agent = "claude",
+      model,
+      // Review options
+      focus,
+      // Docs options
+      docsType,
+      // Tests options
+      testType,
+      target,
+      // Advanced mode
+      initiativeId,
+      repositoryId,
       priority = "medium",
-      externalRef,
-      dependsOn = [],
-      triggers = [],
-      executeNow = true, // Default to executing immediately
     } = body;
-
-    if (!initiativeId || !prompt) {
-      return NextResponse.json(
-        { error: "Initiative ID and prompt are required" },
-        { status: 400 }
-      );
-    }
 
     const supabase = createServerClient();
 
@@ -106,72 +108,95 @@ export async function POST(request: NextRequest) {
       .eq("id", session.user.id)
       .single();
 
-    // Verify initiative ownership and get agent config
-    const { data: initiative } = await supabase
-      .from("initiatives")
-      .select("id, user_id, default_agent, default_model")
-      .eq("id", initiativeId)
-      .eq("user_id", session.user.id)
-      .single();
-
-    if (!initiative) {
-      return NextResponse.json({ error: "Initiative not found" }, { status: 404 });
+    if (!userProfile?.github_token) {
+      return NextResponse.json(
+        { error: "GitHub connection required. Please connect your GitHub account." },
+        { status: 400 }
+      );
     }
 
-    // Get repository URL if specified
-    let repoUrl: string | undefined;
-    let repoBranch = "main";
-    let repoInstructions: string | undefined;
+    // Build prompt based on task type
+    let finalPrompt = prompt || "";
+    if (type === "review") {
+      const focusMap: Record<string, string> = {
+        security: "Focus on security vulnerabilities, auth issues, injection attacks, hardcoded secrets.",
+        performance: "Focus on algorithm efficiency, N+1 queries, memory leaks, caching opportunities.",
+        quality: "Focus on code organization, SOLID principles, DRY violations, naming conventions.",
+        all: "Comprehensive review covering security, performance, and code quality.",
+      };
+      finalPrompt = `Code Review: ${focusMap[focus || "all"]}`;
+    } else if (type === "docs") {
+      const docsMap: Record<string, string> = {
+        readme: "Generate a comprehensive README with installation, usage, configuration, and examples.",
+        api: "Generate API documentation with all endpoints, request/response schemas, and auth details.",
+        full: "Generate full documentation including README, API docs, and architecture guide.",
+        changelog: "Generate a CHANGELOG following Keep a Changelog format.",
+      };
+      finalPrompt = `Documentation: ${docsMap[docsType || "readme"]}`;
+    } else if (type === "tests") {
+      const testMap: Record<string, string> = {
+        unit: "Generate unit tests with happy path, edge cases, and error handling coverage.",
+        integration: "Generate integration tests for component interactions and API testing.",
+        e2e: "Generate end-to-end tests for critical user journeys.",
+      };
+      finalPrompt = `Test Generation: ${testMap[testType || "unit"]}${target ? ` Target: ${target}` : ""}`;
+    }
 
-    if (repositoryId) {
-      const { data: repo } = await supabase
-        .from("repositories")
-        .select("url, default_branch, repo_instructions")
-        .eq("id", repositoryId)
+    if (!finalPrompt) {
+      return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+    }
+
+    // Get or create default initiative for the user
+    let taskInitiativeId = initiativeId;
+    if (!taskInitiativeId) {
+      // Check for existing default initiative
+      const { data: existingInitiative } = await supabase
+        .from("initiatives")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .eq("slug", "default")
         .single();
 
-      if (repo) {
-        repoUrl = repo.url;
-        repoBranch = repo.default_branch || "main";
-        repoInstructions = repo.repo_instructions || undefined;
+      if (existingInitiative) {
+        taskInitiativeId = existingInitiative.id;
+      } else {
+        // Create default initiative
+        const { data: newInitiative, error: initError } = await supabase
+          .from("initiatives")
+          .insert({
+            user_id: session.user.id,
+            name: "Default",
+            slug: "default",
+            description: "Default initiative for quick tasks",
+            default_agent: agent,
+            default_model: model || "blackboxai/anthropic/claude-sonnet-4.5",
+          })
+          .select()
+          .single();
 
-        // Require GitHub token for repo-based tasks
-        if (!userProfile?.github_token) {
-          return NextResponse.json(
-            { error: "GitHub connection required. Please connect your GitHub account in Settings." },
-            { status: 400 }
-          );
+        if (initError) {
+          console.error("Error creating default initiative:", initError);
+          return NextResponse.json({ error: "Failed to create initiative" }, { status: 500 });
         }
+        taskInitiativeId = newInitiative.id;
       }
     }
 
-    // Create task record first
-    const taskData: Record<string, unknown> = {
-      initiative_id: initiativeId,
-      prompt,
-      type,
-      priority,
-      status: executeNow ? "assigned" : "queued",
-      assigned_agents: executeNow ? 1 : 0,
-      progress: 0,
-      depends_on: dependsOn,
-      triggers,
-      queued_at: new Date().toISOString(),
-    };
-
-    if (repositoryId) {
-      taskData.repository_id = repositoryId;
-    }
-
-    if (externalRef) {
-      taskData.external_ref_type = externalRef.type;
-      taskData.external_ref_id = externalRef.id;
-      taskData.external_ref_url = externalRef.url;
-    }
-
+    // Create task record
     const { data: task, error: createError } = await supabase
       .from("tasks")
-      .insert(taskData)
+      .insert({
+        initiative_id: taskInitiativeId,
+        repository_id: repositoryId || null,
+        prompt: finalPrompt,
+        type,
+        priority,
+        status: "running",
+        assigned_agents: 1,
+        progress: 0,
+        queued_at: new Date().toISOString(),
+        started_at: new Date().toISOString(),
+      })
       .select()
       .single();
 
@@ -180,53 +205,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to create task" }, { status: 500 });
     }
 
-    // Execute task through Blackbox API if executeNow is true
-    if (executeNow) {
-      try {
-        const blackbox = createBlackboxClient();
+    // Execute task through Blackbox API
+    try {
+      const blackbox = createBlackboxClient();
 
-        const blackboxTask = await blackbox.createTask({
-          prompt,
-          repoUrl,
-          selectedBranch: repoBranch,
-          selectedAgent: initiative.default_agent as "claude" | "codex" | "gemini" | "blackbox",
-          selectedModel: initiative.default_model,
-          repoInstructions,
-          // Pass user's GitHub token for repo access
-          githubToken: userProfile?.github_token || undefined,
-        });
+      const blackboxResult = await blackbox.createTask({
+        prompt: finalPrompt,
+        repoUrl,
+        selectedBranch: branch,
+        selectedAgent: agent as "claude" | "codex" | "gemini" | "blackbox",
+        selectedModel: model,
+        environmentVariables: {
+          GITHUB_TOKEN: userProfile.github_token,
+        },
+      });
 
-        // Update task with Blackbox task ID and mark as running
-        await supabase
-          .from("tasks")
-          .update({
-            blackbox_task_id: blackboxTask.id,
-            status: "running",
-            started_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", task.id);
+      // Update task with Blackbox task ID
+      await supabase
+        .from("tasks")
+        .update({
+          blackbox_task_id: blackboxResult.taskId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", task.id);
 
-        task.blackbox_task_id = blackboxTask.id;
-        task.status = "running";
-        task.started_at = new Date().toISOString();
+      task.blackbox_task_id = blackboxResult.taskId;
 
-      } catch (blackboxError) {
-        console.error("Error executing task via Blackbox:", blackboxError);
+    } catch (blackboxError) {
+      console.error("Error executing task via Blackbox:", blackboxError);
 
-        // Update task to failed status
-        await supabase
-          .from("tasks")
-          .update({
-            status: "failed",
-            error: blackboxError instanceof Error ? blackboxError.message : "Failed to execute task",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", task.id);
+      // Update task to failed status
+      await supabase
+        .from("tasks")
+        .update({
+          status: "failed",
+          error: blackboxError instanceof Error ? blackboxError.message : "Failed to execute task",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", task.id);
 
-        task.status = "failed";
-        task.error = blackboxError instanceof Error ? blackboxError.message : "Failed to execute task";
-      }
+      task.status = "failed";
+      task.error = blackboxError instanceof Error ? blackboxError.message : "Failed to execute task";
     }
 
     return NextResponse.json({ task }, { status: 201 });

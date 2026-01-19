@@ -44,7 +44,7 @@ export async function GET(
     if (sync && task.blackbox_task_id && ["running", "assigned"].includes(task.status)) {
       try {
         const blackbox = createBlackboxClient();
-        const blackboxTask = await blackbox.getTask(task.blackbox_task_id);
+        const { task: blackboxTask } = await blackbox.getTask(task.blackbox_task_id);
 
         // Map Blackbox status to our status
         const statusMap: Record<string, string> = {
@@ -130,7 +130,8 @@ export async function PUT(
       .eq("id", id)
       .single();
 
-    if (!existingTask || existingTask.initiatives?.user_id !== session.user.id) {
+    const initiative = existingTask?.initiatives as unknown as { user_id: string } | null;
+    if (!existingTask || initiative?.user_id !== session.user.id) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
@@ -211,7 +212,8 @@ export async function DELETE(
       .eq("id", id)
       .single();
 
-    if (!existingTask || existingTask.initiatives?.user_id !== session.user.id) {
+    const taskInitiative = existingTask?.initiatives as unknown as { user_id: string } | null;
+    if (!existingTask || taskInitiative?.user_id !== session.user.id) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 

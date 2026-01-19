@@ -116,28 +116,29 @@ async function getDashboardData(userId: string) {
       : undefined,
     result: t.result,
     artifacts: t.artifacts || [],
+    error: t.error || null,
     dependsOn: t.depends_on || [],
     triggers: t.triggers || [],
     queuedAt: new Date(t.queued_at),
-    startedAt: t.started_at ? new Date(t.started_at) : undefined,
-    completedAt: t.completed_at ? new Date(t.completed_at) : undefined,
+    startedAt: t.started_at ? new Date(t.started_at) : null,
+    completedAt: t.completed_at ? new Date(t.completed_at) : null,
     createdAt: new Date(t.created_at),
     updatedAt: new Date(t.updated_at),
   }));
 
   const messages: AgentMessage[] = (messagesData || []).map((m) => ({
     id: m.id,
-    fromInitiative: m.from_initiative_id,
-    toInitiative: m.to_initiative_id,
-    fromTask: m.from_task_id,
-    toTask: m.to_task_id,
+    fromInitiativeId: m.from_initiative_id,
+    toInitiativeId: m.to_initiative_id,
+    fromTaskId: m.from_task_id,
+    toTaskId: m.to_task_id,
     type: m.type,
     subject: m.subject,
     body: m.body,
     metadata: m.metadata,
     suggestedActions: m.suggested_actions,
     read: m.read,
-    timestamp: new Date(m.created_at),
+    createdAt: new Date(m.created_at),
   }));
 
   return {
